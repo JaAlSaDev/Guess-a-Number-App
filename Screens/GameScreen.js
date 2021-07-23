@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { View, Text, Button, StyleSheet, Alert } from 'react-native'
+import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+
 import NumberContainer from '../components/NumberContainer';
 import Card from '../components/Card';
+import defaultStyles from '../constants/default-styles';
+import MainButton from '../components/MainButton';
 
 const generateRandomBetween = (min, max, exclude) => {
     min = Math.ceil(min);
@@ -19,13 +23,11 @@ const generateRandomBetween = (min, max, exclude) => {
 
 }
 
-
-
 const GameScreen = props => {
     const { userChoice, onGameOver } = props;
-
-    const [numOfRounds, setNumberOfRounds] = useState(0)
-    const [currentGuess, setCurrentGuess] = useState(generateRandomBetween(1, 100, userChoice))
+    const initialGuess = generateRandomBetween(1, 100, userChoice)
+    const [pastGuesses, setPastGuesses] = useState([initialGuess])
+    const [currentGuess, setCurrentGuess] = useState(initialGuess)
 
     // References are detached from the component, so this won't rerender the component
     const currentMin = useRef(1)
@@ -37,7 +39,7 @@ const GameScreen = props => {
     useEffect(() => {
 
         if (currentGuess == userChoice) {
-            onGameOver(numOfRounds)
+            onGameOver(pastGuesses.length)
         }
 
 
@@ -66,22 +68,32 @@ const GameScreen = props => {
             currentMin.current = currentGuess + 1;
         }
 
-        setCurrentGuess(generateRandomBetween(currentMin.current, currentMax.current, currentGuess))
+        const newGuess = generateRandomBetween(currentMin.current, currentMax.current, currentGuess)
+        setCurrentGuess(newGuess)
 
-        setNumberOfRounds(currentNumberOfRounds => currentNumberOfRounds + 1)
+        // setPastGuesses(currentNumberOfRounds => currentNumberOfRounds + 1)
+        setPastGuesses(currentPastGuesses => [newGuess, ...currentPastGuesses])
     }
 
 
     return (
         <View style={styles.screen}>
-            <Text>Opponent's Guess: </Text>
+            <Text style={defaultStyles.bodyText}>Opponent's Guess: </Text>
             <NumberContainer>
                 {currentGuess}
             </NumberContainer>
             <Card style={styles.buttonContainer}>
-                <Button title="LOWER" onPress={() => nextGuessHandler('lower')} />
-                <Button title="GREATER" onPress={() => nextGuessHandler('greater')} />
+                <MainButton onPress={() => nextGuessHandler('lower')}>
+                    <Ionicons name="md-remove" size={24} color="white" />
+                </MainButton>
+                <MainButton onPress={() => nextGuessHandler('greater')}>
+                    <Ionicons name="md-add" size={24} color="white" />
+                </MainButton>
             </Card>
+
+            <ScrollView>
+                {pastGuesses.map(guess => (<View key={guess}><Text>{guess}</Text></View>))}
+            </ScrollView>
 
         </View>
     )
@@ -98,8 +110,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-around',
         marginTop: 20,
-        width: 300,
-        maxWidth: "80%"
+        width: 400,
+        maxWidth: "90%"
     }
 })
 
